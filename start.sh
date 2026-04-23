@@ -7,8 +7,9 @@ RUNDIR="$ROOT/.data/mysql-run"
 SOCK="$RUNDIR/mysql.sock"
 PIDFILE="$RUNDIR/mysql.pid"
 MYCNF="$RUNDIR/my.cnf"
+SETUPFLAG="$RUNDIR/setup_done"
 
-mkdir -p "$RUNDIR"
+mkdir -p "$RUNDIR" "$DATADIR"
 
 cat > "$MYCNF" <<EOF
 [mysqld]
@@ -21,28 +22,82 @@ bind-address=127.0.0.1
 socket=$SOCK
 EOF
 
-start_mariadb() {
-  echo "[start.sh] Starting MariaDB..."
-  mariadbd --defaults-file="$MYCNF" --user="$(whoami)" >"$RUNDIR/mysql.log" 2>&1 &
-  MYSQL_PID=$!
-  echo "[start.sh] MariaDB pid=$MYSQL_PID"
+wait_for_socket() {
   for i in $(seq 1 30); do
-    if mysql --socket="$SOCK" -u root -e "SELECT 1" >/dev/null 2>&1; then
-      echo "[start.sh] MariaDB ready."
+    if [ -S "$SOCK" ]; then
       return 0
     fi
     sleep 1
   done
-  echo "[start.sh] MariaDB failed to start. Log:"
-  tail -40 "$RUNDIR/mysql.log"
-  exit 1
+  return 1
 }
 
-if mysql --socket="$SOCK" -e "SELECT 1" >/dev/null 2>&1; then
-  echo "[start.sh] MariaDB already running."
-else
-  start_mariadb
+# If data directory is empty, initialize it
+if [ ! -f "$DATADIR/ibdata1" ]; then
+  echo "[start.sh] Initializing fresh MariaDB data directory..."
+  mariadb-install-db --datadir="$DATADIR" --auth-root-authentication-method=normal --skip-test-db 2>&1 || true
+  echo "[start.sh] Init complete."
 fi
+
+# Kill any leftover mariadbd process
+if [ -f "$PIDFILE" ]; then
+  OLD_PID=$(cat "$PIDFILE" 2>/dev/null || true)
+  if [ -n "$OLD_PID" ] && kill -0 "$OLD_PID" 2>/dev/null; then
+    echo "[start.sh] Stopping old MariaDB (pid=$OLD_PID)..."
+    kill "$OLD_PID" 2>/dev/null || true
+    sleep 2
+  fi
+  rm -f "$PIDFILE"
+fi
+rm -f "$SOCK"
+
+# First-time setup: start with --skip-grant-tables to configure root
+if [ ! -f "$SETUPFLAG" ]; then
+  echo "[start.sh] First-time setup: starting MariaDB with --skip-grant-tables..."
+  mariadbd --defaults-file="$MYCNF" --skip-grant-tables --skip-networking=0 >"$RUNDIR/mysql.log" 2>&1 &
+  MYSQL_PID=$!
+  echo "[start.sh] MariaDB pid=$MYSQL_PID (setup mode)"
+
+  if ! wait_for_socket; then
+    echo "[start.sh] MariaDB failed to start in setup mode. Log:"
+    tail -20 "$RUNDIR/mysql.log"
+    exit 1
+  fi
+  echo "[start.sh] MariaDB socket ready. Setting up root user..."
+
+  mysql --socket="$SOCK" -u root <<'SQL'
+FLUSH PRIVILEGES;
+ALTER USER IF EXISTS 'root'@'localhost' IDENTIFIED VIA mysql_native_password USING PASSWORD('');
+GRANT ALL PRIVILEGES ON *.* TO 'root'@'localhost' WITH GRANT OPTION;
+FLUSH PRIVILEGES;
+SQL
+
+  echo "[start.sh] Stopping setup-mode MariaDB..."
+  kill "$MYSQL_PID" 2>/dev/null || true
+  sleep 3
+  rm -f "$SOCK" "$PIDFILE"
+  touch "$SETUPFLAG"
+  echo "[start.sh] First-time setup complete."
+fi
+
+# Start MariaDB normally
+echo "[start.sh] Starting MariaDB..."
+mariadbd --defaults-file="$MYCNF" --user="$(whoami)" >"$RUNDIR/mysql.log" 2>&1 &
+MYSQL_PID=$!
+echo "[start.sh] MariaDB pid=$MYSQL_PID"
+
+for i in $(seq 1 30); do
+  if mysql --socket="$SOCK" -u root -e "SELECT 1" >/dev/null 2>&1; then
+    echo "[start.sh] MariaDB ready."
+    break
+  fi
+  if [ $i -eq 30 ]; then
+    echo "[start.sh] MariaDB failed to start. Log:"
+    tail -40 "$RUNDIR/mysql.log"
+    exit 1
+  fi
+  sleep 1
+done
 
 mysql --socket="$SOCK" -u root <<'SQL'
 CREATE DATABASE IF NOT EXISTS artmir;
@@ -58,6 +113,22 @@ fi
 
 echo "[start.sh] Applying schema migrations..."
 mysql --socket="$SOCK" -u root artmir <<'SQL'
+-- Create tables first before altering them
+CREATE TABLE IF NOT EXISTS seller_payments (
+  id           INT AUTO_INCREMENT PRIMARY KEY,
+  purchase_id  INT NOT NULL,
+  seller       VARCHAR(255) NOT NULL,
+  buyer        VARCHAR(255) NOT NULL,
+  amount       DECIMAL(10,2) NOT NULL,
+  status       VARCHAR(20) NOT NULL DEFAULT 'pending',
+  item_type    VARCHAR(100) NOT NULL,
+  s_id         INT NOT NULL,
+  purchase_date DATETIME NOT NULL,
+  release_date  DATETIME NOT NULL,
+  approved_by  VARCHAR(100) DEFAULT NULL,
+  approved_at  DATETIME DEFAULT NULL
+);
+
 ALTER TABLE reports
   ADD COLUMN IF NOT EXISTS subject  VARCHAR(255) NOT NULL DEFAULT '',
   ADD COLUMN IF NOT EXISTS type     VARCHAR(255) NOT NULL DEFAULT 'request',
@@ -102,21 +173,6 @@ ALTER TABLE accounts   MODIFY IF EXISTS proof VARCHAR(255) NOT NULL DEFAULT '';
 ALTER TABLE rdps       MODIFY IF EXISTS proof VARCHAR(255) NOT NULL DEFAULT '';
 ALTER TABLE rdps       MODIFY IF EXISTS ram   VARCHAR(32)  NOT NULL DEFAULT '';
 ALTER TABLE cpanels    MODIFY IF EXISTS proof VARCHAR(255) NOT NULL DEFAULT '';
-
-CREATE TABLE IF NOT EXISTS seller_payments (
-  id           INT AUTO_INCREMENT PRIMARY KEY,
-  purchase_id  INT NOT NULL,
-  seller       VARCHAR(255) NOT NULL,
-  buyer        VARCHAR(255) NOT NULL,
-  amount       DECIMAL(10,2) NOT NULL,
-  status       VARCHAR(20) NOT NULL DEFAULT 'pending',
-  item_type    VARCHAR(100) NOT NULL,
-  s_id         INT NOT NULL,
-  purchase_date DATETIME NOT NULL,
-  release_date  DATETIME NOT NULL,
-  approved_by  VARCHAR(100) DEFAULT NULL,
-  approved_at  DATETIME DEFAULT NULL
-);
 
 CREATE TABLE IF NOT EXISTS refund (
   id        INT AUTO_INCREMENT PRIMARY KEY,
