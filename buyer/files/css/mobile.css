@@ -1,0 +1,308 @@
+/* ================================================================
+   NullNet — Global Mobile Responsive Styles
+   Applies to all panels: buyer, seller, admin, support + auth pages
+   ================================================================ */
+
+/* ---- LOGIN / SIGNUP / FORGET FORMS ---- */
+@media (max-width: 500px) {
+    .login {
+        width: calc(100vw - 30px) !important;
+        min-width: unset !important;
+        max-width: 420px;
+        position: relative !important;
+        top: unset !important;
+        left: unset !important;
+        transform: none !important;
+        -webkit-transform: none !important;
+        -moz-transform: none !important;
+        -ms-transform: none !important;
+        -o-transform: none !important;
+        margin: 20px auto !important;
+        box-sizing: border-box;
+    }
+
+    body.auth-body {
+        display: flex;
+        align-items: flex-start;
+        justify-content: center;
+        min-height: 100vh;
+        padding: 20px 0;
+        overflow-y: auto;
+    }
+
+    .forget-container {
+        position: relative !important;
+        width: 100% !important;
+        padding: 15px !important;
+    }
+
+    .forget-container .col-md-offset-5,
+    .forget-container .col-md-3 {
+        width: 100% !important;
+        margin-left: 0 !important;
+    }
+}
+
+/* ---- GENERAL MOBILE (< 768px) ---- */
+@media (max-width: 767px) {
+
+    /* Body padding for fixed navbar */
+    body {
+        padding-top: 60px !important;
+        padding-bottom: 70px !important; /* room for bottom nav */
+    }
+
+    /* Prevent horizontal scrolling on page level */
+    html, body {
+        overflow-x: hidden;
+        max-width: 100%;
+    }
+
+    /* ---- TABLES — scrollable on mobile ---- */
+    .table-responsive-mobile {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        width: 100%;
+        margin-bottom: 10px;
+    }
+
+    /* Auto-wrap standard bootstrap tables not already in .table-responsive */
+    table.table {
+        display: block;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        max-width: 100%;
+    }
+
+    /* ---- CONTAINERS & GRID ---- */
+    .container-fluid {
+        padding-left: 8px !important;
+        padding-right: 8px !important;
+    }
+
+    .row {
+        margin-left: -5px;
+        margin-right: -5px;
+    }
+
+    [class*="col-"] {
+        padding-left: 5px;
+        padding-right: 5px;
+    }
+
+    /* ---- FORMS ---- */
+    input[type="text"],
+    input[type="password"],
+    input[type="email"],
+    input[type="number"],
+    input[type="url"],
+    input[type="search"],
+    textarea,
+    select,
+    .form-control {
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+    }
+
+    /* ---- BUTTONS ---- */
+    .btn {
+        white-space: normal;
+    }
+
+    /* Full-width buttons in small screens where needed */
+    .btn-mobile-full {
+        width: 100%;
+        margin-bottom: 5px;
+    }
+
+    /* ---- MODALS ---- */
+    .modal-dialog {
+        margin: 10px !important;
+        width: calc(100% - 20px) !important;
+        max-width: 100% !important;
+    }
+
+    /* ---- TABS ---- */
+    .nav-tabs > li > a {
+        padding: 6px 8px;
+        font-size: 12px;
+    }
+
+    /* ---- PANELS ---- */
+    .panel-body {
+        padding: 8px;
+    }
+
+    /* ---- BUYER PANEL ---- */
+    #mainDiv {
+        padding: 0 2px;
+        overflow-x: hidden;
+    }
+
+    /* Balance badge in navbar */
+    .navbar-nav .badge {
+        font-size: 11px;
+    }
+
+    /* ---- SIDEBAR PANELS (Admin / Seller / Support) ---- */
+
+    /* The mobile sidebar toggle button — shown in navbar on mobile */
+    .mobile-sidebar-btn {
+        display: inline-block !important;
+        float: left;
+        margin: 9px 5px 9px 10px;
+        background: transparent;
+        border: 1px solid rgba(255,255,255,0.4);
+        color: #fff;
+        border-radius: 4px;
+        padding: 5px 10px;
+        cursor: pointer;
+        font-size: 16px;
+        line-height: 1;
+        z-index: 2000;
+        position: relative;
+    }
+
+    /* Override: on mobile the sidebar opens as an overlay, NOT pushing content */
+    #wrapper.toggled {
+        padding-left: 0 !important;
+    }
+
+    #wrapper.toggled #sidebar-wrapper {
+        width: 250px;
+        position: fixed;
+        top: 50px;
+        left: 0;
+        height: calc(100% - 50px);
+        z-index: 1050;
+        overflow-y: auto;
+    }
+
+    #wrapper.toggled #page-content-wrapper {
+        margin-right: 0 !important;
+        position: relative !important;
+    }
+
+    /* Dark overlay behind open sidebar */
+    #sidebar-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.55);
+        z-index: 1040;
+        cursor: pointer;
+    }
+
+    #wrapper.toggled #sidebar-overlay {
+        display: block;
+    }
+
+    /* Sidebar panel page content top padding */
+    #page-content-wrapper {
+        padding-top: 55px !important;
+    }
+
+    /* ---- TICKET / REPORT VIEW PAGES ---- */
+    .well {
+        padding: 8px;
+    }
+
+    .panel-heading h3,
+    .panel-heading h4 {
+        font-size: 15px;
+    }
+
+    /* ---- LABEL BADGES — prevent overflow ---- */
+    .label {
+        white-space: normal;
+        display: inline-block;
+    }
+
+    /* ---- TEXT OVERFLOW FIX ---- */
+    td, th {
+        word-break: break-word;
+        max-width: 200px;
+    }
+
+    /* Long text in table cells */
+    td pre, td code {
+        white-space: pre-wrap;
+        word-break: break-all;
+    }
+}
+
+/* ---- Hide mobile-only elements on desktop ---- */
+@media (min-width: 768px) {
+    .mobile-sidebar-btn {
+        display: none !important;
+    }
+
+    #mobile-bottom-nav {
+        display: none !important;
+    }
+
+    #sidebar-overlay {
+        display: none !important;
+    }
+}
+
+/* ================================================================
+   BOTTOM NAVIGATION BAR (Buyer panel — mobile only)
+   ================================================================ */
+#mobile-bottom-nav {
+    display: none;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 56px;
+    background-color: #910606;
+    z-index: 1050;
+    align-items: center;
+    justify-content: space-around;
+    border-top: 1px solid rgba(255,255,255,0.2);
+    box-shadow: 0 -2px 8px rgba(0,0,0,0.3);
+}
+
+#mobile-bottom-nav a {
+    flex: 1;
+    text-align: center;
+    color: rgba(255,255,255,0.8);
+    font-size: 10px;
+    padding: 5px 2px 4px;
+    text-decoration: none !important;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    background: none;
+    cursor: pointer;
+}
+
+#mobile-bottom-nav a:hover,
+#mobile-bottom-nav a.active {
+    color: #fff;
+    background: rgba(255,255,255,0.1);
+}
+
+#mobile-bottom-nav .glyphicon {
+    font-size: 19px;
+    margin-bottom: 2px;
+    display: block;
+}
+
+#mobile-bottom-nav .nav-label {
+    display: block;
+    line-height: 1;
+}
+
+@media (max-width: 767px) {
+    #mobile-bottom-nav {
+        display: flex !important;
+    }
+}
